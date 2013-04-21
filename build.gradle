@@ -26,7 +26,7 @@ repositories {
     mavenCentral()
 }
 
-/* Java ------------------------------------------------------------- */
+/* Java -------------------------------------------------------------------- */
 sourceCompatibility = 1.6
 
 configurations {
@@ -59,3 +59,20 @@ codenarc.ignoreFailures = true
 findbugs.ignoreFailures = true
 pmd.ignoreFailures = true
 */
+
+/* IDE --------------------------------------------------------------------- */
+
+// Sets an IntelliJ project JDK and makes Git the VCS of choice
+//TODO: Associate the right checkstyle.xml within IntelliJ?
+idea {
+
+    project {
+        jdkName = '1.6'
+
+        ipr {
+            withXml { provider ->
+                provider.node.component.find { it.@name == 'VcsDirectoryMappings' }.mapping.@vcs = 'Git'
+            }
+        }
+    }
+}
