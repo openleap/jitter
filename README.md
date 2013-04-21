@@ -1,5 +1,7 @@
-jitter
+Jitter
 ======
+
+![Jitter](jitterlogo.png "Jitter")
 
 General purpose Java library for the Leap Motion
 

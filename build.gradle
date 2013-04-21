@@ -1,0 +1,61 @@
+/*
+ * This is a Gradle build file:
+ * - Gradle Homepage: http://gradle.org/
+ * - Gradle Documentation: http://gradle.org/documentation
+ * - View tasks for this project: $ gradlew tasks
+ */
+ 
+apply plugin: 'java'
+apply plugin: 'project-report'
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+apply plugin: 'checkstyle'
+
+/*
+ * To update the Gradle Wrapper:
+ * 1. Uncomment 'wrapper' task
+ * 2. Change 'gradleVersion'
+ * 3. Run "gradlew wrapper"
+ * 4. Comment 'wrapper' task
+ */
+//task wrapper(type: Wrapper) {
+//    gradleVersion = '1.4'
+//}
+
+repositories {
+    mavenCentral()
+}
+
+/* Java ------------------------------------------------------------- */
+sourceCompatibility = 1.6
+
+configurations {
+    devCompile.extendsFrom compile
+}
+
+dependencies {
+    compile group: 'java3d', name: 'vecmath', version: '1.3.1'
+    compile fileTree(dir: 'lib', include: 'LeapJava.jar')
+    devCompile sourceSets.main.output
+}
+
+jar {
+    archiveName = 'jitter.jar'
+    manifest {
+        attributes("Class-Path" : 'lib/LeapJava.jar', "Implementation-Title": "Jitter")
+    }
+}
+
+/* Check ------------------------------------------------------------------- */
+checkstyle.ignoreFailures = true
+checkstyle.configProperties.samedir = checkstyle.configFile.parentFile
+/* Optional check plugins
+apply plugin: 'codenarc'
+apply plugin: 'findbugs'
+apply plugin: 'pmd'
+
+// ignoreFailures: Whether or not this task will ignore failures and continue running the build.
+codenarc.ignoreFailures = true
+findbugs.ignoreFailures = true
+pmd.ignoreFailures = true
+*/
