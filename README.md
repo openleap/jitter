@@ -14,3 +14,15 @@ Jitter is released under the [LGPL](http://www.gnu.org/copyleft/lesser.html) wit
 The [MovingBlocks](https://github.com/movingblocks) team behind [Terasology](http://terasology.org) is hosting a [Jenkins](http://jenkins.movingblocks.net) build for [Jitter](http://jenkins.movingblocks.net/job/Jitter/) with the [latest jar download here](http://jenkins.movingblocks.net/job/Jitter/lastSuccessfulBuild/artifact/build/libs/jitter.jar)
 
 For a sample implementation see the [Terasology prototype thread](http://forum.movingblocks.net/threads/leap-motion-controller.707/) - if you use Jitter in a project please let us know so we can link to you!
+
+Quick example for buffered Circle Gestures:
+
+    for (CircleGesture circleGesture : jitterBuffer.nextCircleBatch(2)) {
+        if (JitterSystem.isClockwise(circleGesture)) {
+            System.out.println("Processing a clockwise circle gesture");
+        } else {
+            System.out.println("Processing a counter-clockwise circle gesture");
+        }
+    }
+
+This fetches all pending circle gestures that have gone at least two entire trips around the circle then does different stuff depending on clockwiseness.
