@@ -62,17 +62,24 @@ pmd.ignoreFailures = true
 
 /* IDE --------------------------------------------------------------------- */
 
-// Sets an IntelliJ project JDK and makes Git the VCS of choice
-//TODO: Associate the right checkstyle.xml within IntelliJ?
-idea {
+// Hook for parent projects that may embed Jitter - in that case parent will be responsible for IntelliJ setup
+if (project.getParent() != null) {
+    println "Project parent isn't null! Must be embedded within a parent project, not setting up IntelliJ"
+} else {
+    println "Project parent is null! Must not be embedded within a parent project, setting up IntelliJ"
 
-    project {
-        jdkName = '1.6'
+    // Sets an IntelliJ project JDK and makes Git the VCS of choice
+    idea {
+        project {
+            jdkName = '1.6'
 
-        ipr {
-            withXml { provider ->
-                provider.node.component.find { it.@name == 'VcsDirectoryMappings' }.mapping.@vcs = 'Git'
+            ipr {
+                withXml { provider ->
+                    provider.node.component.find { it.@name == 'VcsDirectoryMappings' }.mapping.@vcs = 'Git'
+                }
             }
         }
     }
 }
+
+
