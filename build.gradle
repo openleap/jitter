@@ -19,7 +19,7 @@ apply plugin: 'checkstyle'
  * 4. Comment 'wrapper' task
  */
 //task wrapper(type: Wrapper) {
-//    gradleVersion = '1.4'
+//    gradleVersion = '1.10'
 //}
 
 repositories {
