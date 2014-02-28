@@ -36,6 +36,8 @@ configurations {
 dependencies {
     compile group: 'java3d', name: 'vecmath', version: '1.3.1'
     compile fileTree(dir: 'lib', include: 'LeapJava.jar')
+    compile group: 'org.slf4j', name: 'slf4j-api', version: '1.6.4'
+    compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.0.6'
     devCompile sourceSets.main.output
 }
 
