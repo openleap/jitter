@@ -20,6 +20,8 @@ package org.openleap.jitter;
 import com.leapmotion.leap.*;
 import com.leapmotion.leap.Gesture.Type;
 import com.leapmotion.leap.Vector;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.vecmath.Vector3f;
 import java.util.*;
@@ -58,6 +60,7 @@ public class JitterSystem {
     private String sdkVersion = "0.7.7";
     private int activeScreenNr = 0;
     private Finger velocityOffsetTestFinger;
+    private static final Logger logger = LoggerFactory.getLogger(JitterSystem.class);
 
     /**
      * This class gives you some high level access to the data tracked and recorded by the leap.
@@ -114,9 +117,9 @@ public class JitterSystem {
      * and will give you the position, velocity and acceleration offsets
      */
     public void printCorrectionOffset() {
-        System.out.println("pos offset: " + getTip(velocityOffsetTestFinger));
-        System.out.println("velocity offset: " + getVelocity(velocityOffsetTestFinger));
-        System.out.println("acc offset: " + getAcceleration(velocityOffsetTestFinger));
+        logger.info("pos offset: " + getTip(velocityOffsetTestFinger));
+        logger.info("velocity offset: " + getVelocity(velocityOffsetTestFinger));
+        logger.info("acc offset: " + getAcceleration(velocityOffsetTestFinger));
     }
 
     /**
@@ -167,8 +170,8 @@ public class JitterSystem {
         try {
             return controller;
         } catch (Exception e) {
-            System.err.println("Can not return controller not initialized. Returning new Controller object");
-            System.out.println(e);
+            logger.error("Can not return controller not initialized. Returning new Controller object");
+            System.err.print(e);
             return new Controller();
         }
     }
@@ -183,8 +186,8 @@ public class JitterSystem {
         try {
             return currentFrame;
         } catch (Exception e) {
-            System.err.println("Can not return current frame. Returning new Frame object instead");
-            System.err.println(e);
+            logger.error("Can not return current frame. Returning new Frame object instead");
+            System.err.print(e);
             return new Frame();
         }
     }
@@ -246,7 +249,7 @@ public class JitterSystem {
         try {
             return oldFrames;
         } catch (Exception e) {
-            System.err.println("Can not return list of last frames. Returning empty list instead.");
+            logger.error("Can not return list of last frames. Returning empty list instead.");
             System.err.println(e);
             return new CopyOnWriteArrayList<Frame>();
         }
@@ -280,9 +283,9 @@ public class JitterSystem {
         Vector3f fingerPositionXYPlane = new Vector3f();
 
         Frame frame = getFrame();
-        if (!frame.hands().empty()) {
+        if (!frame.hands().isEmpty()) {
             Hand hand = frame.hands().get(0);
-            if (!hand.fingers().empty()) {
+            if (!hand.fingers().isEmpty()) {
                 Finger finger = hand.fingers().get(0);
                 fingerPositionXYPlane.x = transformLeapToScreenX(finger.tipPosition().getX());
                 fingerPositionXYPlane.y = transformLeapToScreenY(finger.tipPosition().getY());
@@ -387,7 +390,7 @@ public class JitterSystem {
     public ArrayList<Hand> getHandList() {
         ArrayList<Hand> hands = new ArrayList<Hand>();
         Frame frame = getFrame();
-        if (!frame.hands().empty()) {
+        if (!frame.hands().isEmpty()) {
             for (Hand hand : frame.hands()) {
                 hands.add(hand);
             }
@@ -404,7 +407,7 @@ public class JitterSystem {
     public ArrayList<Hand> getHandList(Frame frame) {
         ArrayList<Hand> hands = new ArrayList<Hand>();
         try {
-            if (!frame.hands().empty()) {
+            if (!frame.hands().isEmpty()) {
                 for (Hand hand : frame.hands()) {
                     if (hand.isValid()) {
                         hands.add(hand);
@@ -412,7 +415,7 @@ public class JitterSystem {
                 }
             }
         } catch (Exception e) {
-            System.out.println("This exception goes 'moo' (and is ignored)");
+            logger.debug("This exception goes 'moo' (and is ignored)");
         }
         return hands;
     }
@@ -592,7 +595,7 @@ public class JitterSystem {
             currentVelo = getVelocity(hand);
             lastVelo = getVelocity(getHandById(hand.id(), lastFrame));
         } catch (Exception e) {
-            System.out.println("Ignoring exception thrown trying to get velocity of a given hand");
+            logger.debug("Ignoring exception thrown trying to get velocity of a given hand");
         }
         currentVelo.sub(lastVelo);
         //TODO: Vector division is available in Processing but not straight up in Java's Vector3f. Okay replacement?
@@ -627,7 +630,7 @@ public class JitterSystem {
         ArrayList<Finger> fingers = new ArrayList<Finger>();
 
         Frame frame = getFrame();
-        if (!frame.hands().empty()) {
+        if (!frame.hands().isEmpty()) {
             for (Hand hand : frame.hands()) {
                 fingers.addAll(getFingerList(hand));
             }
@@ -645,7 +648,7 @@ public class JitterSystem {
     public ArrayList<Finger> getFingerList(Frame frame) {
         ArrayList<Finger> fingers = new ArrayList<Finger>();
 
-        if (!frame.hands().empty()) {
+        if (!frame.hands().isEmpty()) {
             for (Hand hand : frame.hands()) {
                 fingers.addAll(getFingerList(hand));
             }
@@ -734,7 +737,7 @@ public class JitterSystem {
     public Vector3f getTipOnScreen(Pointable pointable) {
         Vector3f pos;
 
-        ScreenList sl = controller.calibratedScreens();
+        ScreenList sl = controller.locatedScreens();
         com.leapmotion.leap.Screen calibratedScreen = sl.get(activeScreenNr);
         Vector loc = calibratedScreen.intersect(pointable, true);
 
@@ -766,12 +769,12 @@ public class JitterSystem {
         Vector loc = new Vector();
         Vector oldLoc = new Vector();
         try {
-            oldLoc = getLastController().calibratedScreens().get(activeScreenNr)
+            oldLoc = getLastController().locatedScreens().get(activeScreenNr)
                             .intersect(getPointableById(pointable.id(), getLastFrame()), true);
-            loc = controller.calibratedScreens().get(activeScreenNr).intersect(pointable, true);
+            loc = controller.locatedScreens().get(activeScreenNr).intersect(pointable, true);
         } catch (NullPointerException e) {
             // dirty dirty hack to keep the program running. i like it.
-            System.out.println("Terribly unholy things are happening");
+            logger.debug("Terribly unholy things are happening");
         }
 
         //TODO: Commented out for Jitter, needs rewrite - maybe initialize the system with screen dimensions?
@@ -873,7 +876,7 @@ public class JitterSystem {
             currentVelocity = getVelocity(pointable);
             lastVelocity = getVelocity(getPointableById(pointable.id(), lastFrame));
         } catch (Exception e) {
-            System.out.println("I like cheese and to ignore exceptions");
+            logger.debug("I like cheese and to ignore exceptions");
         }
         currentVelocity.sub(lastVelocity);
         //TODO: Java lacks fancy vector math, acceptable replacement for division?
@@ -890,7 +893,7 @@ public class JitterSystem {
         ArrayList<Pointable> pointables = new ArrayList<Pointable>();
 
         Frame frame = getFrame();
-        if (!frame.hands().empty()) {
+        if (!frame.hands().isEmpty()) {
             for (Hand hand : frame.hands()) {
                 pointables.addAll(getPointableList(hand));
             }
@@ -907,7 +910,7 @@ public class JitterSystem {
     public ArrayList<Pointable> getPointableList(Frame frame) {
         ArrayList<Pointable> pointables = new ArrayList<Pointable>();
 
-        if (!frame.hands().empty()) {
+        if (!frame.hands().isEmpty()) {
             for (Hand hand : frame.hands()) {
                 pointables.addAll(getPointableList(hand));
             }
@@ -979,7 +982,7 @@ public class JitterSystem {
         ArrayList<Tool> tools = new ArrayList<Tool>();
 
         Frame frame = getFrame();
-        if (!frame.hands().empty()) {
+        if (!frame.hands().isEmpty()) {
             for (Hand hand : frame.hands()) {
                 tools.addAll(getToolList(hand));
             }
@@ -996,7 +999,7 @@ public class JitterSystem {
     public ArrayList<Tool> getToolList(Frame frame) {
         ArrayList<Tool> tools = new ArrayList<Tool>();
 
-        if (!frame.hands().empty()) {
+        if (!frame.hands().isEmpty()) {
             for (Hand hand : frame.hands()) {
                 tools.addAll(getToolList(hand));
             }

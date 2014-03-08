@@ -22,6 +22,8 @@ import com.leapmotion.leap.CircleGesture;
 import com.leapmotion.leap.SwipeGesture;
 import com.leapmotion.leap.KeyTapGesture;
 import com.leapmotion.leap.ScreenTapGesture;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -58,6 +60,7 @@ public class BufferedJitterSystem implements JitterListener {
 
     /** List of consumed IDs for circleGestures (gestures that have been marked as "spent") */
     private ConcurrentSkipListSet<Integer> consumedCircles = new ConcurrentSkipListSet<Integer>();
+    private static final Logger logger = LoggerFactory.getLogger(BufferedJitterSystem.class);
 
     /**
      * Accepts input via JitterListener and adds to a local buffer when appropriate.
@@ -77,16 +80,16 @@ public class BufferedJitterSystem implements JitterListener {
                 circleGestures.put(gesture.id(), gesture);
             }
 
-            System.out.println("//////////////////////////////////////");
-            System.out.println("Gesture type: " + gesture.type().toString());
-            System.out.println("ID: " + gesture.id());
-            System.out.println("Radius: " + gesture.radius());
-            System.out.println("Normal: " + gesture.normal());
-            System.out.println("Clockwise: " + JitterSystem.isClockwise(gesture));
-            System.out.println("Turns: " + gesture.progress());
-            System.out.println("Center: " + gesture.center());
-            System.out.println("Duration: " + gesture.durationSeconds() + "s");
-            System.out.println("//////////////////////////////////////");
+            logger.debug("//////////////////////////////////////");
+            logger.debug("Gesture type: " + gesture.type().toString());
+            logger.debug("ID: " + gesture.id());
+            logger.debug("Radius: " + gesture.radius());
+            logger.debug("Normal: " + gesture.normal());
+            logger.debug("Clockwise: " + JitterSystem.isClockwise(gesture));
+            logger.debug("Turns: " + gesture.progress());
+            logger.debug("Center: " + gesture.center());
+            logger.debug("Duration: " + gesture.durationSeconds() + "s");
+            logger.debug("//////////////////////////////////////");
         } else if (gesture.state() == Gesture.State.STATE_START) {
             //System.out.println("Circle started, adding gesture to buffer");
 
@@ -108,18 +111,18 @@ public class BufferedJitterSystem implements JitterListener {
     @Override
     public void swipeGestureRecognized(SwipeGesture gesture) {
         if (gesture.state() == Gesture.State.STATE_STOP) {
-            System.out.println("//////////////////////////////////////");
-            System.out.println("Gesture type: " + gesture.type());
-            System.out.println("ID: " + gesture.id());
-            System.out.println("Position: " + gesture.position());
-            System.out.println("Direction: " + gesture.direction());
-            System.out.println("Duration: " + gesture.durationSeconds() + "s");
-            System.out.println("Speed: " + gesture.speed());
-            System.out.println("//////////////////////////////////////");
+            logger.debug("//////////////////////////////////////");
+            logger.debug("Gesture type: " + gesture.type());
+            logger.debug("ID: " + gesture.id());
+            logger.debug("Position: " + gesture.position());
+            logger.debug("Direction: " + gesture.direction());
+            logger.debug("Duration: " + gesture.durationSeconds() + "s");
+            logger.debug("Speed: " + gesture.speed());
+            logger.debug("//////////////////////////////////////");
         } else if (gesture.state() == Gesture.State.STATE_START) {
-            System.out.println("Swipe started");
+            logger.debug("Swipe started");
         } else if (gesture.state() == Gesture.State.STATE_UPDATE) {
-            System.out.println("Swipe updated");
+            logger.debug("Swipe updated");
         }
     }
 
@@ -127,17 +130,17 @@ public class BufferedJitterSystem implements JitterListener {
     @Override
     public void screenTapGestureRecognized(ScreenTapGesture gesture) {
         if (gesture.state() == Gesture.State.STATE_STOP) {
-            System.out.println("//////////////////////////////////////");
-            System.out.println("Gesture type: " + gesture.type());
-            System.out.println("ID: " + gesture.id());
-            System.out.println("Position: " + gesture.position());
-            System.out.println("Direction: " + gesture.direction());
-            System.out.println("Duration: " + gesture.durationSeconds() + "s");
-            System.out.println("//////////////////////////////////////");
+            logger.debug("//////////////////////////////////////");
+            logger.debug("Gesture type: " + gesture.type());
+            logger.debug("ID: " + gesture.id());
+            logger.debug("Position: " + gesture.position());
+            logger.debug("Direction: " + gesture.direction());
+            logger.debug("Duration: " + gesture.durationSeconds() + "s");
+            logger.debug("//////////////////////////////////////");
         } else if (gesture.state() == Gesture.State.STATE_START) {
-            System.out.println("Screen tap started");
+            logger.debug("Screen tap started");
         } else if (gesture.state() == Gesture.State.STATE_UPDATE) {
-            System.out.println("Screen tap updated");
+            logger.debug("Screen tap updated");
         }
     }
 
@@ -145,17 +148,17 @@ public class BufferedJitterSystem implements JitterListener {
     @Override
     public void keyTapGestureRecognized(KeyTapGesture gesture) {
         if (gesture.state() == Gesture.State.STATE_STOP) {
-            System.out.println("//////////////////////////////////////");
-            System.out.println("Gesture type: " + gesture.type());
-            System.out.println("ID: " + gesture.id());
-            System.out.println("Position: " + gesture.position());
-            System.out.println("Direction: " + gesture.direction());
-            System.out.println("Duration: " + gesture.durationSeconds() + "s");
-            System.out.println("//////////////////////////////////////");
+            logger.debug("//////////////////////////////////////");
+            logger.debug("Gesture type: " + gesture.type());
+            logger.debug("ID: " + gesture.id());
+            logger.debug("Position: " + gesture.position());
+            logger.debug("Direction: " + gesture.direction());
+            logger.debug("Duration: " + gesture.durationSeconds() + "s");
+            logger.debug("//////////////////////////////////////");
         } else if (gesture.state() == Gesture.State.STATE_START) {
-            System.out.println("Key tap started");
+            logger.debug("Key tap started");
         } else if (gesture.state() == Gesture.State.STATE_UPDATE) {
-            System.out.println("Key tap updated");
+            logger.debug("Key tap updated");
         }
     }
 
@@ -199,13 +202,13 @@ public class BufferedJitterSystem implements JitterListener {
     public Set<CircleGesture> nextCircleBatch(float progress) {
         Set<CircleGesture> circleBatch = new HashSet<CircleGesture>();
 
-        //System.out.println("nextCircleBatch started with " + circleGestures.size() + " entries in the buffer");
+        // System.out.println("nextCircleBatch started with " + circleGestures.size() + " entries in the buffer");
 
         for (CircleGesture circleGesture : circleGestures.values()) {
 
             // Test against constraints here and add only if the gesture passes muster
             if (circleGesture.progress() >= progress) {
-                System.out.println("Circle gesture has progressed sufficiently, allowing it to be processed");
+                logger.debug("Circle gesture has progressed sufficiently, allowing it to be processed");
                 circleBatch.add(circleGesture);
 
                 // Consume (if that's enabled)
@@ -237,7 +240,7 @@ public class BufferedJitterSystem implements JitterListener {
 
             // Test against constraints here and add only if the gesture passes muster
             if (circleGesture.progress() >= progress && circleGesture.radius() >= radius) {
-                System.out.println("Circle gesture has progressed sufficiently, allowing it to be processed");
+                logger.debug("Circle gesture has progressed sufficiently, allowing it to be processed");
                 circleBatch.add(circleGesture);
 
                 // Consume (if that's enabled)
@@ -261,7 +264,7 @@ public class BufferedJitterSystem implements JitterListener {
     private void consumeCircle(CircleGesture circleGesture) {
         // If gestures of this type are considered consumed when returned for processing then flag & remove
         if (consumptionEnabled) {
-            System.out.println("Consuming circle gesture with id: " + circleGesture.id());
+            logger.debug("Consuming circle gesture with id: " + circleGesture.id());
             consumedCircles.add(circleGesture.id());    // Mark circle as consumed so it won't get re-added
             circleGestures.remove(circleGesture.id());  // Remove it from the buffer so it won't be tested again
         } // Else then the gesture stays in the buffer till the STOP state 'if' later removes it
@@ -280,7 +283,7 @@ public class BufferedJitterSystem implements JitterListener {
             // Additionally clear out the consumption status if enabled - even if we *just* consumed the gesture ;-)
             if (consumptionEnabled) {
                 consumedCircles.remove(circleGesture.id());
-                System.out.println("Just removed gesture with id " + circleGesture.id() + " from the 'consumed' list");
+                logger.debug("Just removed gesture with id " + circleGesture.id() + " from the 'consumed' list");
             }
         }
     }

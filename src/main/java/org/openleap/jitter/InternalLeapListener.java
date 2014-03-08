@@ -32,6 +32,8 @@ import com.leapmotion.leap.KeyTapGesture;
 import com.leapmotion.leap.Listener;
 import com.leapmotion.leap.ScreenTapGesture;
 import com.leapmotion.leap.SwipeGesture;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * InternalLeapListener is a wrapped Leap Listener used by Jitter. It captures and stores Leap data in the JitterSystem.
@@ -46,6 +48,7 @@ class InternalLeapListener extends Listener {
     protected int maxFramesToRecord = 1000;
     private JitterSystem jitterSystem;
     private JitterListener externalListener;
+    private static final Logger logger = LoggerFactory.getLogger(InternalLeapListener.class);
 
     /**
      * Instantiates the internal listener.
@@ -63,19 +66,19 @@ class InternalLeapListener extends Listener {
     }
 
     public void onInit(Controller controller) {
-        System.out.println("Leap Motion Initialized");
+        logger.info("Leap Motion Initialized");
     }
 
     public void onConnect(Controller controller) {
-        System.out.println("Leap Motion Connected");
+        logger.info("Leap Motion Connected");
     }
 
     public void onDisconnect(Controller controller) {
-        System.out.println("Leap Motion Disconnected");
+        logger.info("Leap Motion Disconnected");
     }
 
     public void onExit(Controller controller) {
-        System.out.println("Leap Motion Exited");
+        logger.info("Leap Motion Exited");
     }
 
     /**
@@ -117,7 +120,7 @@ class InternalLeapListener extends Listener {
     private void processGestures(Controller controller) {
         GestureList list = controller.frame().gestures();
         //TODO: Hmm, this if isn't actually needed, is it? list.count() == 0 will skip the loop anyway
-        if (!list.empty()) {
+        if (!list.isEmpty()) {
             for (int i = 0; i < list.count(); i++) {
                 Gesture gesture = list.get(i);
                 invokeCallback(gesture);
@@ -135,7 +138,7 @@ class InternalLeapListener extends Listener {
                 try {
                     externalListener.circleGestureRecognized(circleGesture);
                 } catch (Exception e) {
-                    System.out.println(e.getMessage() + " CALLBACK ERROR");
+                    logger.error(e.getMessage() + " CALLBACK ERROR");
                 }
                 break;
             case TYPE_SWIPE:
@@ -143,7 +146,7 @@ class InternalLeapListener extends Listener {
                 try {
                     externalListener.swipeGestureRecognized(swipeGesture);
                 } catch (Exception e) {
-                    System.out.println(e.getMessage() + " CALLBACK ERROR");
+                    logger.error(e.getMessage() + " CALLBACK ERROR");
                 }
                 break;
             case TYPE_SCREEN_TAP:
@@ -151,7 +154,7 @@ class InternalLeapListener extends Listener {
                 try {
                     externalListener.screenTapGestureRecognized(screenTapGesture);
                 } catch (Exception e) {
-                    System.out.println(e.getMessage() + " CALLBACK ERROR");
+                    logger.error(e.getMessage() + " CALLBACK ERROR");
                 }
                 break;
             case TYPE_KEY_TAP:
@@ -159,7 +162,7 @@ class InternalLeapListener extends Listener {
                 try {
                     externalListener.keyTapGestureRecognized(keyTapGesture);
                 } catch (Exception e) {
-                    System.out.println(e.getMessage() + " CALLBACK ERROR");
+                    logger.error(e.getMessage() + " CALLBACK ERROR");
                 }
                 break;
             default:
@@ -189,27 +192,27 @@ class InternalLeapListener extends Listener {
                     sweptAngle = (circle.progress() - previousUpdate.progress()) * 2 * Math.PI;
                 }
 
-                System.out.println("Circle id: " + circle.id() + ", " + circle.state() + ", progress: "
+                logger.debug("Circle id: " + circle.id() + ", " + circle.state() + ", progress: "
                         + circle.progress() + ", radius: " + circle.radius() + ", angle: "
                         + Math.toDegrees(sweptAngle) + ", " + clockwise);
                 break;
             case TYPE_SWIPE:
                 SwipeGesture swipe = new SwipeGesture(gesture);
-                System.out.println("Swipe id: " + swipe.id() + ", " + swipe.state() + ", position: "
+                logger.debug("Swipe id: " + swipe.id() + ", " + swipe.state() + ", position: "
                         + swipe.position() + ", direction: " + swipe.direction() + ", speed: " + swipe.speed());
                 break;
             case TYPE_SCREEN_TAP:
                 ScreenTapGesture screenTap = new ScreenTapGesture(gesture);
-                System.out.println("Screen Tap id: " + screenTap.id() + ", " + screenTap.state()
+                logger.debug("Screen Tap id: " + screenTap.id() + ", " + screenTap.state()
                         + ", position: " + screenTap.position() + ", direction: " + screenTap.direction());
                 break;
             case TYPE_KEY_TAP:
                 KeyTapGesture keyTap = new KeyTapGesture(gesture);
-                System.out.println("Key Tap id: " + keyTap.id() + ", " + keyTap.state() + ", position: "
+                logger.debug("Key Tap id: " + keyTap.id() + ", " + keyTap.state() + ", position: "
                         + keyTap.position() + ", direction: " + keyTap.direction());
                 break;
             default:
-                System.out.println("Unknown gesture type.");
+                logger.debug("Unknown gesture type.");
                 break;
         }
     }
