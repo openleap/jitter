@@ -25,6 +25,7 @@ import com.leapmotion.leap.ScreenTapGesture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.security.Key;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -55,110 +56,111 @@ import java.util.concurrent.ConcurrentSkipListSet;
  */
 public class BufferedJitterSystem implements JitterListener {
 
-    /** Buffer for CircleGestures with their IDs as keys */
-    private ConcurrentSkipListMap<Integer, CircleGesture> circleGestures = new ConcurrentSkipListMap<Integer, CircleGesture>();
+    //Circle gesture buffers
+    private ConcurrentSkipListMap<Integer, CircleGesture> circleGestureBuffer = new ConcurrentSkipListMap<Integer, CircleGesture>();
+    private ConcurrentSkipListSet<Integer> consumedCircleGestureBuffer = new ConcurrentSkipListSet<Integer>();
+    //Swipe gesture buffers
+    private ConcurrentSkipListMap<Integer, SwipeGesture> swipeGestureBuffer = new ConcurrentSkipListMap<Integer, SwipeGesture>();
+    private ConcurrentSkipListSet<Integer> consumedSwipeGestureBuffer = new ConcurrentSkipListSet<Integer>();
+    //Screen tap gesture buffers
+    private ConcurrentSkipListMap<Integer, ScreenTapGesture> screenTapGestureBuffer = new ConcurrentSkipListMap<Integer, ScreenTapGesture>();
+    private ConcurrentSkipListSet<Integer> consumedScreenTapGestureBuffer = new ConcurrentSkipListSet<Integer>();
+    //Key tap gesture buffers
+    private ConcurrentSkipListMap<Integer, KeyTapGesture> keyTapGestureBuffer = new ConcurrentSkipListMap<Integer, KeyTapGesture>();
+    private ConcurrentSkipListSet<Integer> consumedKeyTapGestureBuffer = new ConcurrentSkipListSet<Integer>();
 
-    /** List of consumed IDs for circleGestures (gestures that have been marked as "spent") */
-    private ConcurrentSkipListSet<Integer> consumedCircles = new ConcurrentSkipListSet<Integer>();
     private static final Logger logger = LoggerFactory.getLogger(BufferedJitterSystem.class);
 
-    /**
-     * Accepts input via JitterListener and adds to a local buffer when appropriate.
-     *
-     * @param gesture the CircleGesture detected
-     */
     @Override
-    public void circleGestureRecognized(CircleGesture gesture) {
-        if (gesture.state() == Gesture.State.STATE_STOP) {
-            // A gesture in STOP state may have previously existed, we effectively treat it as an update
-            // The processing method will be responsible for removing it from the buffer later
-            //System.out.println("Circle stopped, adding/updating gesture in buffer one last time");
-
-            // For stops we check if the gesture has been consumed previously in which case we won't re-add it
-            // If consumption isn't enabled this if will always pass since the consumedCircles will be empty
-            if (!consumedCircles.contains(gesture.id())) {
-                circleGestures.put(gesture.id(), gesture);
-            }
+    public void circleGestureRecognized(CircleGesture detectedGesture) {
+        if (detectedGesture.state() == Gesture.State.STATE_STOP) {
+            //This may have been already consumed, we are not sure.
+            if (!consumedCircleGestureBuffer.contains(detectedGesture.id()))
+                circleGestureBuffer.put(detectedGesture.id(), detectedGesture);
 
             logger.debug("//////////////////////////////////////");
-            logger.debug("Gesture type: " + gesture.type().toString());
-            logger.debug("ID: " + gesture.id());
-            logger.debug("Radius: " + gesture.radius());
-            logger.debug("Normal: " + gesture.normal());
-            logger.debug("Clockwise: " + JitterSystem.isClockwise(gesture));
-            logger.debug("Turns: " + gesture.progress());
-            logger.debug("Center: " + gesture.center());
-            logger.debug("Duration: " + gesture.durationSeconds() + "s");
+            logger.debug("Gesture type: " + detectedGesture.type().toString());
+            logger.debug("ID: " + detectedGesture.id());
+            logger.debug("Radius: " + detectedGesture.radius());
+            logger.debug("Normal: " + detectedGesture.normal());
+            logger.debug("Clockwise: " + JitterSystem.isClockwise(detectedGesture));
+            logger.debug("Turns: " + detectedGesture.progress());
+            logger.debug("Center: " + detectedGesture.center());
+            logger.debug("Duration: " + detectedGesture.durationSeconds() + "s");
             logger.debug("//////////////////////////////////////");
-        } else if (gesture.state() == Gesture.State.STATE_START) {
-            //System.out.println("Circle started, adding gesture to buffer");
+        } else if (detectedGesture.state() == Gesture.State.STATE_START) {
+            circleGestureBuffer.put(detectedGesture.id(), detectedGesture);
+        } else if (detectedGesture.state() == Gesture.State.STATE_UPDATE) {
+            if (!consumedCircleGestureBuffer.contains(detectedGesture.id()))
+                circleGestureBuffer.put(detectedGesture.id(), detectedGesture);
+        }
+    }
 
-            // A gesture in START state has never been seen before, so we just add it to the buffer blindly
-            circleGestures.put(gesture.id(), gesture);
+    @Override
+    public void swipeGestureRecognized(SwipeGesture detectedGesture) {
+        logger.info("Swipe gesture recognizeD.");
+        if (detectedGesture.state() == Gesture.State.STATE_STOP) {
+            if(!consumedSwipeGestureBuffer.contains(detectedGesture.id()))
+                swipeGestureBuffer.put(detectedGesture.id(), detectedGesture);
 
-        } else if (gesture.state() == Gesture.State.STATE_UPDATE) {
-            //System.out.println("Circle updated, updating it in the buffer (unless previously consumed)");
+            logger.debug("//////////////////////////////////////");
+            logger.debug("Gesture type: " + detectedGesture.type());
+            logger.debug("ID: " + detectedGesture.id());
+            logger.debug("Position: " + detectedGesture.position());
+            logger.debug("Direction: " + detectedGesture.direction());
+            logger.debug("Duration: " + detectedGesture.durationSeconds() + "s");
+            logger.debug("Speed: " + detectedGesture.speed());
+            logger.debug("//////////////////////////////////////");
+        } else if (detectedGesture.state() == Gesture.State.STATE_START) {
+            logger.info("Swipe gesture recognized.");
+            swipeGestureBuffer.put(detectedGesture.id(), detectedGesture);
+        } else if (detectedGesture.state() == Gesture.State.STATE_UPDATE) {
+            logger.info("Swipe gesture recognizEd.");
+            if(!consumedSwipeGestureBuffer.contains(detectedGesture.id()))
+                swipeGestureBuffer.put(detectedGesture.id(), detectedGesture);
+        }
+    }
 
-            // For updates we check if the gesture has been consumed previously in which case we won't re-add it
-            // If consumption isn't enabled this if will always pass since the consumedCircles will be empty
-            if (!consumedCircles.contains(gesture.id())) {
-                circleGestures.put(gesture.id(), gesture);
-            }
+    @Override
+    public void screenTapGestureRecognized(ScreenTapGesture detectedGesture) {
+        if (detectedGesture.state() == Gesture.State.STATE_STOP) {
+            if(!consumedScreenTapGestureBuffer.contains(detectedGesture.id()))
+                screenTapGestureBuffer.put(detectedGesture.id(), detectedGesture);
+
+            logger.debug("//////////////////////////////////////");
+            logger.debug("Gesture type: " + detectedGesture.type());
+            logger.debug("ID: " + detectedGesture.id());
+            logger.debug("Position: " + detectedGesture.position());
+            logger.debug("Direction: " + detectedGesture.direction());
+            logger.debug("Duration: " + detectedGesture.durationSeconds() + "s");
+            logger.debug("//////////////////////////////////////");
+        } else if (detectedGesture.state() == Gesture.State.STATE_START) {
+            screenTapGestureBuffer.put(detectedGesture.id(), detectedGesture);
+        } else if (detectedGesture.state() == Gesture.State.STATE_UPDATE) {
+            if(!consumedScreenTapGestureBuffer.contains(detectedGesture.id()))
+                screenTapGestureBuffer.put(detectedGesture.id(), detectedGesture);
         }
     }
 
     //TODO: Refactor to follow a similar approach as circle gestures
     @Override
-    public void swipeGestureRecognized(SwipeGesture gesture) {
-        if (gesture.state() == Gesture.State.STATE_STOP) {
-            logger.debug("//////////////////////////////////////");
-            logger.debug("Gesture type: " + gesture.type());
-            logger.debug("ID: " + gesture.id());
-            logger.debug("Position: " + gesture.position());
-            logger.debug("Direction: " + gesture.direction());
-            logger.debug("Duration: " + gesture.durationSeconds() + "s");
-            logger.debug("Speed: " + gesture.speed());
-            logger.debug("//////////////////////////////////////");
-        } else if (gesture.state() == Gesture.State.STATE_START) {
-            logger.debug("Swipe started");
-        } else if (gesture.state() == Gesture.State.STATE_UPDATE) {
-            logger.debug("Swipe updated");
-        }
-    }
+    public void keyTapGestureRecognized(KeyTapGesture detectedGesture) {
+        if (detectedGesture.state() == Gesture.State.STATE_STOP) {
+            if(!consumedKeyTapGestureBuffer.contains(detectedGesture.id()))
+                keyTapGestureBuffer.put(detectedGesture.id(), detectedGesture);
 
-    //TODO: Refactor to follow a similar approach as circle gestures
-    @Override
-    public void screenTapGestureRecognized(ScreenTapGesture gesture) {
-        if (gesture.state() == Gesture.State.STATE_STOP) {
             logger.debug("//////////////////////////////////////");
-            logger.debug("Gesture type: " + gesture.type());
-            logger.debug("ID: " + gesture.id());
-            logger.debug("Position: " + gesture.position());
-            logger.debug("Direction: " + gesture.direction());
-            logger.debug("Duration: " + gesture.durationSeconds() + "s");
+            logger.debug("Gesture type: " + detectedGesture.type());
+            logger.debug("ID: " + detectedGesture.id());
+            logger.debug("Position: " + detectedGesture.position());
+            logger.debug("Direction: " + detectedGesture.direction());
+            logger.debug("Duration: " + detectedGesture.durationSeconds() + "s");
             logger.debug("//////////////////////////////////////");
-        } else if (gesture.state() == Gesture.State.STATE_START) {
-            logger.debug("Screen tap started");
-        } else if (gesture.state() == Gesture.State.STATE_UPDATE) {
-            logger.debug("Screen tap updated");
-        }
-    }
-
-    //TODO: Refactor to follow a similar approach as circle gestures
-    @Override
-    public void keyTapGestureRecognized(KeyTapGesture gesture) {
-        if (gesture.state() == Gesture.State.STATE_STOP) {
-            logger.debug("//////////////////////////////////////");
-            logger.debug("Gesture type: " + gesture.type());
-            logger.debug("ID: " + gesture.id());
-            logger.debug("Position: " + gesture.position());
-            logger.debug("Direction: " + gesture.direction());
-            logger.debug("Duration: " + gesture.durationSeconds() + "s");
-            logger.debug("//////////////////////////////////////");
-        } else if (gesture.state() == Gesture.State.STATE_START) {
-            logger.debug("Key tap started");
-        } else if (gesture.state() == Gesture.State.STATE_UPDATE) {
-            logger.debug("Key tap updated");
+        } else if (detectedGesture.state() == Gesture.State.STATE_START) {
+            keyTapGestureBuffer.put(detectedGesture.id(), detectedGesture);
+        } else if (detectedGesture.state() == Gesture.State.STATE_UPDATE) {
+            if(!consumedKeyTapGestureBuffer.contains(detectedGesture.id()))
+                keyTapGestureBuffer.put(detectedGesture.id(), detectedGesture);
         }
     }
 
@@ -179,7 +181,7 @@ public class BufferedJitterSystem implements JitterListener {
     public Set<CircleGesture> nextCircleBatch() {
         Set<CircleGesture> circleBatch = new HashSet<CircleGesture>();
 
-        for (CircleGesture circleGesture : circleGestures.values()) {
+        for (CircleGesture circleGesture : circleGestureBuffer.values()) {
 
             // Automatically add every circle to the return batch since we have no constraints to test here
             circleBatch.add(circleGesture);
@@ -202,28 +204,16 @@ public class BufferedJitterSystem implements JitterListener {
     public Set<CircleGesture> nextCircleBatch(float progress) {
         Set<CircleGesture> circleBatch = new HashSet<CircleGesture>();
 
-        // System.out.println("nextCircleBatch started with " + circleGestures.size() + " entries in the buffer");
+        // System.out.println("nextCircleBatch started with " + circleGestureBuffer.size() + " entries in the buffer");
 
-        for (CircleGesture circleGesture : circleGestures.values()) {
-
-            // Test against constraints here and add only if the gesture passes muster
+        for (CircleGesture circleGesture : circleGestureBuffer.values()) {
             if (circleGesture.progress() >= progress) {
                 logger.debug("Circle gesture has progressed sufficiently, allowing it to be processed");
                 circleBatch.add(circleGesture);
-
-                // Consume (if that's enabled)
                 consumeCircle(circleGesture);
-
-            } //else {
-                //System.out.println("Circle gesture hasn't progressed enough to be considered yet");
-            //}
-
-            // Remove stopped circles (won't be seen again). With constraints some circles may never have been used
+            }
             removeStoppedCircles(circleGesture);
         }
-
-        //System.out.println("nextCircleBatch returning " + circleBatch.size() + " entries, finished with " + circleGestures.size() + " entries in the buffer");
-
         return circleBatch;
     }
 
@@ -236,7 +226,7 @@ public class BufferedJitterSystem implements JitterListener {
     public Set<CircleGesture> nextCircleBatch(float progress, float radius) {
         Set<CircleGesture> circleBatch = new HashSet<CircleGesture>();
 
-        for (CircleGesture circleGesture : circleGestures.values()) {
+        for (CircleGesture circleGesture : circleGestureBuffer.values()) {
 
             // Test against constraints here and add only if the gesture passes muster
             if (circleGesture.progress() >= progress && circleGesture.radius() >= radius) {
@@ -258,32 +248,107 @@ public class BufferedJitterSystem implements JitterListener {
     }
 
     /**
-     * Helper method that processes a CircleGesture as consumed if that functionality is enabled.
-     * @param circleGesture the CircleGesture to consume
+     * @return the next swipe gesture in the respective buffer.
      */
+    public Set<SwipeGesture> getNextSwipeGestureFromBuffer() {
+        Set<SwipeGesture> swipeBatch = new HashSet<SwipeGesture>();
+        for (SwipeGesture swipeGesture : swipeGestureBuffer.values()) {
+            swipeBatch.add(swipeGesture);
+            consumeSwipe(swipeGesture);
+            removeStoppedSwipes(swipeGesture);
+        }
+        return swipeBatch;
+    }
+
+    public Set<ScreenTapGesture> getNextScreenTapGestureFromBuffer() {
+        Set<ScreenTapGesture> swipeBatch = new HashSet<ScreenTapGesture>();
+        for (ScreenTapGesture screenTapGesture : screenTapGestureBuffer.values()) {
+            swipeBatch.add(screenTapGesture);
+            consumeScreenTap(screenTapGesture);
+            removeStoppedScreenTaps(screenTapGesture);
+        }
+        return swipeBatch;
+    }
+
+    public Set<KeyTapGesture> getNextKeyTapGestureFromBuffer() {
+        Set<KeyTapGesture> swipeBatch = new HashSet<KeyTapGesture>();
+        for (KeyTapGesture keyTapGesture : keyTapGestureBuffer.values()) {
+            swipeBatch.add(keyTapGesture);
+            consumeKeyTap(keyTapGesture);
+            removeStoppedKeyTaps(keyTapGesture);
+        }
+        return swipeBatch;
+    }
+
     private void consumeCircle(CircleGesture circleGesture) {
         // If gestures of this type are considered consumed when returned for processing then flag & remove
         if (consumptionEnabled) {
             logger.debug("Consuming circle gesture with id: " + circleGesture.id());
-            consumedCircles.add(circleGesture.id());    // Mark circle as consumed so it won't get re-added
-            circleGestures.remove(circleGesture.id());  // Remove it from the buffer so it won't be tested again
-        } // Else then the gesture stays in the buffer till the STOP state 'if' later removes it
+            consumedCircleGestureBuffer.add(circleGesture.id());    // Mark circle as consumed so it won't get re-added
+            circleGestureBuffer.remove(circleGesture.id());  // Remove it from the buffer so it won't be tested again
+        }
     }
 
-    /**
-     * Helper method that removes a CircleGesture from the buffer if it has reached a stopped state.
-     * Also removes the circle's ID from the consumed list (if enabled) so we keep that list nice and tiny.
-     * @param circleGesture the CircleGesture that just stopped
-     */
     private void removeStoppedCircles(CircleGesture circleGesture) {
         if (circleGesture.state() == Gesture.State.STATE_STOP) {
-
-            circleGestures.remove(circleGesture.id());
-
-            // Additionally clear out the consumption status if enabled - even if we *just* consumed the gesture ;-)
+            circleGestureBuffer.remove(circleGesture.id());
             if (consumptionEnabled) {
-                consumedCircles.remove(circleGesture.id());
+                consumedCircleGestureBuffer.remove(circleGesture.id());
                 logger.debug("Just removed gesture with id " + circleGesture.id() + " from the 'consumed' list");
+            }
+        }
+    }
+
+    private void consumeSwipe(SwipeGesture swipeGesture) {
+        if(consumptionEnabled) {
+            logger.debug("Consuming swipe gesture with id {}", swipeGesture.id());
+            consumedSwipeGestureBuffer.add(swipeGesture.id());
+            swipeGestureBuffer.remove(swipeGesture.id());
+        }
+    }
+
+    private void removeStoppedSwipes(SwipeGesture swipeGesture) {
+        if(swipeGesture.state() == Gesture.State.STATE_STOP) {
+            swipeGestureBuffer.remove(swipeGesture.id());
+            if(consumptionEnabled) {
+                consumedSwipeGestureBuffer.remove(swipeGesture.id());
+                logger.debug("Removed the swipe gesture from the consumed buffer with the id {}", swipeGesture.id());
+            }
+        }
+    }
+
+    private void consumeScreenTap(ScreenTapGesture screenTapGesture) {
+        if(consumptionEnabled) {
+            logger.debug("Consuming swipe gesture with id {}", screenTapGesture.id());
+            consumedScreenTapGestureBuffer.add(screenTapGesture.id());
+            screenTapGestureBuffer.remove(screenTapGesture.id());
+        }
+    }
+
+    private void removeStoppedScreenTaps(ScreenTapGesture screenTapGesture) {
+        if(screenTapGesture.state() == Gesture.State.STATE_STOP) {
+            swipeGestureBuffer.remove(screenTapGesture.id());
+            if(consumptionEnabled) {
+                consumedScreenTapGestureBuffer.remove(screenTapGesture.id());
+                logger.debug("Removed the swipe gesture from the consumed buffer with the id {}", screenTapGesture.id());
+            }
+        }
+    }
+
+    private void consumeKeyTap(KeyTapGesture keyTapGesture) {
+        if(consumptionEnabled) {
+            logger.debug("Consuming swipe gesture with id {}", keyTapGesture.id());
+            consumedKeyTapGestureBuffer.add(keyTapGesture.id());
+            keyTapGestureBuffer.remove(keyTapGesture.id());
+        }
+    }
+
+    private void removeStoppedKeyTaps(KeyTapGesture keyTapGesture) {
+        if(keyTapGesture.state() == Gesture.State.STATE_STOP) {
+            keyTapGestureBuffer.remove(keyTapGesture.id());
+            if(consumptionEnabled) {
+                consumedKeyTapGestureBuffer.remove(keyTapGesture.id());
+                logger.debug("Removed the swipe gesture from the consumed buffer with the id {}", keyTapGesture.id());
             }
         }
     }
